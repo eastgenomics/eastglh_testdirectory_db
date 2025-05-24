@@ -25,7 +25,7 @@ def parse_arguments():
         "--no-dry-run",
         action="store_false",
         dest="dry_run",
-        help="Run without modifying the database (default is dry-run mode)"
+        help="Run without modifying the database (default is dry-run mode)",
     )
     return parser.parse_args()
 
@@ -63,11 +63,11 @@ def get_high_confidence_genes(panel_id: int, version: str) -> list:
 
 def get_existing_genes_for_panel(east_panel_id: int, cursor) -> set:
     """Get existing genes for a panel from the database.
-    
+
     Args:
         east_panel_id (int): primary key of panel in "east-panels" table
         cursor (psycopg2.Cursor): A database cursor object
-    
+
     Returns:
         set[str]: Set of existing hgnc ids for the panel
     """
@@ -78,7 +78,7 @@ def get_existing_genes_for_panel(east_panel_id: int, cursor) -> set:
             FROM "testdirectory"."east-genes" 
             WHERE "east-panel-id" = %s
             """,
-            (east_panel_id,)
+            (east_panel_id,),
         )
         existing_genes = {row[0] for row in cursor.fetchall()}
         print(f"Found {len(existing_genes)} genes for panel {east_panel_id} in db")
@@ -88,9 +88,11 @@ def get_existing_genes_for_panel(east_panel_id: int, cursor) -> set:
         return set()
 
 
-def add_genes_to_panel(east_panel_id: int, genes_to_add: set, cursor, dry_run: bool) -> None:
+def add_genes_to_panel(
+    east_panel_id: int, genes_to_add: set, cursor, dry_run: bool
+) -> None:
     """Insert new genes for a panel into the database.
-    
+
     Args:
         east_panel_id (int): Panel identifier.
         genes_to_add (set): Genes to insert.
@@ -102,21 +104,28 @@ def add_genes_to_panel(east_panel_id: int, genes_to_add: set, cursor, dry_run: b
             if dry_run:
                 print(f"[DRY-RUN ADD] Panel {east_panel_id}: Would add gene {hgnc_id}")
             else:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT INTO "testdirectory"."east-genes" ("east-panel-id", "hgnc-id")
                     VALUES (%s, %s)
-                """, (east_panel_id, hgnc_id))
+                """,
+                    (east_panel_id, hgnc_id),
+                )
                 print(f"[ADD] Panel {east_panel_id}: Added gene {hgnc_id}")
-                
+
         except psycopg2.IntegrityError:
-            print(f"[SKIP DUPLICATE] Panel {east_panel_id}: Gene {hgnc_id} already exists")
+            print(
+                f"[SKIP DUPLICATE] Panel {east_panel_id}: Gene {hgnc_id} already exists"
+            )
         except Exception as e:
             print(f"Error adding gene {hgnc_id} to panel {east_panel_id}: {e}")
 
 
-def remove_genes_from_panel(east_panel_id: int, genes_to_remove: set, cursor, dry_run: bool) -> None:
+def remove_genes_from_panel(
+    east_panel_id: int, genes_to_remove: set, cursor, dry_run: bool
+) -> None:
     """Remove genes that are no longer part of the panel.
-    
+
     Args:
         east_panel_id (int): Panel identifier.
         genes_to_remove (set): Genes to remove.
@@ -126,16 +135,23 @@ def remove_genes_from_panel(east_panel_id: int, genes_to_remove: set, cursor, dr
     for hgnc_id in genes_to_remove:
         try:
             if dry_run:
-                print(f"[DRY-RUN REMOVE] Panel {east_panel_id}: Would remove gene {hgnc_id}")
+                print(
+                    f"[DRY-RUN REMOVE] Panel {east_panel_id}: Would remove gene {hgnc_id}"
+                )
             else:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     DELETE FROM "testdirectory"."east-genes"
                     WHERE "east-panel-id" = %s AND "hgnc-id" = %s
-                """, (east_panel_id, hgnc_id))
+                """,
+                    (east_panel_id, hgnc_id),
+                )
                 if cursor.rowcount > 0:
                     print(f"[REMOVE] Panel {east_panel_id}: Removed gene {hgnc_id}")
                 else:
-                    print(f"[SKIP REMOVE] Panel {east_panel_id}: Gene {hgnc_id} not found in DB")
+                    print(
+                        f"[SKIP REMOVE] Panel {east_panel_id}: Gene {hgnc_id} not found in DB"
+                    )
         except Exception as e:
             print(f"Error removing gene {hgnc_id} from panel {east_panel_id}: {e}")
 
@@ -156,39 +172,41 @@ def update_db_genes(east_panel_id, hgnc_ids, cursor, dry_run=True) -> None:
 
         db_genes = get_existing_genes_for_panel(east_panel_id, cursor)
         panelapp_genes = set(hgnc_ids)
-        
+
         genes_to_add = panelapp_genes - db_genes
         genes_to_remove = db_genes - panelapp_genes
-        
+
         if not genes_to_add and not genes_to_remove:
             print(f"[NO CHANGE] Panel {east_panel_id}: Genes are up to date.")
             return
-        
-        add_genes_to_panel(east_panel_id, genes_to_add, cursor, dry_run)
-        remove_genes_from_panel(east_panel_id, genes_to_remove, cursor, dry_run)
-        
+
+        if genes_to_add:
+            add_genes_to_panel(east_panel_id, genes_to_add, cursor, dry_run)
+        if genes_to_remove:
+            remove_genes_from_panel(east_panel_id, genes_to_remove, cursor, dry_run)
+
     except Exception as e:
         print(f"[ERROR] Panel {east_panel_id}: Rolling back changes due to error: {e}")
         if not dry_run:
             cursor.execute(f"ROLLBACK TO SAVEPOINT panel_{east_panel_id}")
 
 
-
 def main():
-    """Entry point
-    """
+    """Entry point"""
     args = parse_arguments()
-    
+
     try:
         with psycopg2.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cursor:
                 print("Connected to the database successfully.")
 
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT "id", "panel-id", "panel-version"
                     FROM testdirectory."east-panels"
                     WHERE "panel-type-id" = 1
-                """)
+                """
+                )
 
                 panel_data = cursor.fetchall()
 
