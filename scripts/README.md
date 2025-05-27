@@ -16,19 +16,22 @@ Parses the East-GLH Test Directory spreadsheet, retrieves panel info from the Pa
 3. `compare_dfs.py`:
 Compares the data from the spreadsheet and database, identifying mismatches
 
-4. `add_genes.py`:
-Populates the table, `east-genes`.
+4. `update_panels_info.py`:
+Update panels info to latest signoff versions from PanelApp
 
-5. `validate_east_genes_table.py`:
+5. `update_genes.py`:
+Updates the table, `east-genes` with updates from PanelApp.
+
+6. `validate_east_genes_table.py`:
 Verifies that `east-genes` table has been populated
 
-6. `generate_genepanels.py`:
+7. `generate_genepanels.py`:
 Generates a new genepanels file by querying all panels and genes in new ngtd database
 
-7. `compare_genepanels.py`:
+8. `compare_genepanels.py`:
 Compares the new genepanels with the old (prod) one and summarises any diff to a spreadsheet
 
-8. `check_gene_to_transcript.py`:
+9. `check_gene_to_transcript.py`:
 Check that all genes in new genepanels are mapped to a clinical transcript in prod g2t file.
 
 ### How to Run
