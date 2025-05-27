@@ -1,7 +1,7 @@
 <!-- dx-header -->
 ## EastGLH Test Directory Database
 
-This repo contains utilities for querying and managing the EastGLH Test Database.
+This repo contains utilities for querying and managing the EastGLH Test Directory Database.
 
 ### Set up
 To keep your dependencies isolated and the project environment clean, it's recommended to use a virtual environment.
