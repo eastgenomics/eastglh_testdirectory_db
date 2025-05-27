@@ -53,7 +53,11 @@ def get_high_confidence_genes(panel_id: int, version: str) -> list:
         high_confidence_genes = [
             gene["gene_data"]["hgnc_id"]
             for gene in panel_data["genes"]
-            if gene["confidence_level"] == "3"
+            if (
+                gene.get("confidence_level") == "3" 
+                and "gene_data" in gene 
+                and "hgnc_id" in gene["gene_data"]
+            )
         ]
         return high_confidence_genes
     except Exception as e:
@@ -213,6 +217,7 @@ def main():
             with conn.cursor() as cursor:
                 print("Connected to the database successfully.")
 
+                # Select only PanelApp panels (panel-type-id = 1) for update
                 cursor.execute(
                     """
                     SELECT "id", "panel-id", "panel-version"

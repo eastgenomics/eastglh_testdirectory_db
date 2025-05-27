@@ -30,18 +30,24 @@ def fetch_latest_signoff(panel_id: int) -> tuple:
         f"https://panelapp.genomicsengland.co.uk/api/v1/panels/signedoff/"
         f"?panel_id={panel_id}"
     )
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        if data["results"]:
-            latest_result = data["results"][0]
-            return (
-                latest_result["name"],
-                latest_result["version"],
-                latest_result["signed_off"],
-            )
-    else:
-        print(f"Error fetching {panel_id}, status code: {response.status_code}")
+    try:
+        response = requests.get(url, timeout=30)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("results"):
+                latest_result = data["results"][0]
+                return (
+                    latest_result["name"],
+                    latest_result["version"],
+                    latest_result["signed_off"],
+                )
+            else:
+                print(f"No results found for panel {panel_id}")
+        else:
+            print(f"Error fetching {panel_id}, status code: {response.status_code}")
+    except requests.exceptions.RequestException as e:
+        print(f"Network error fetching panel {panel_id}: {e}")
+    
     return None, None, None
 
 
@@ -67,28 +73,32 @@ def update_panel_info(
         dry_run (bool): If True, only print changes (default)
     """
     updates = []
+    params = []
     changes = []
 
     if new_name and new_name != current_name:
-        updates.append(f"\"panel-name\" = '{new_name}'")
+        updates.append('"panel-name" = %s')
+        params.append(new_name)
         changes.append(f"name from '{current_name}' to '{new_name}'")
 
     if new_version and new_version != current_version:
-        updates.append(f"\"panel-version\" = '{new_version}'")
+        updates.append('"panel-version" = %s')
+        params.append(new_version)
         changes.append(f"version from {current_version} to {new_version}")
 
     if updates:
         update_query = f"""
         UPDATE testdirectory."east-panels"
         SET {', '.join(updates)}
-        WHERE "panel-id" = '{panel_id}'
+        WHERE "panel-id" = %s
         """
+        params.append(panel_id)
 
         if dry_run:
             print(f"[DRY RUN] Would update panel {panel_id}: {', '.join(changes)}")
         else:
             try:
-                cursor.execute(update_query)
+                cursor.execute(update_query, params)
                 print(f"Updated panel {panel_id}: {', '.join(changes)}")
             except Exception as e:
                 print(f"Error updating panel {panel_id}: {e}")
@@ -146,12 +156,14 @@ def main():
                     print("Changes committed to the database.")
                 else:
                     print("\n[DRY RUN] No changes committed.")
-
+    
+    # auto rollback by context manager               
+    except psycopg2.Error as db_error:
+        print(f"Database operation failed: {db_error}")
+        print("Any changes have been automatically rolled back.")
     except Exception as e:
-        print(f"Database operation failed: {e}")
-        if not args.dry_run and "conn" in locals():
-            conn.rollback()
-            print("Changes rolled back due to error.")
+        print(f"Unexpected error: {e}")
+        print("Any changes have been automatically rolled back.")
 
 
 if __name__ == "__main__":

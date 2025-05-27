@@ -17,10 +17,10 @@ Parses the East-GLH Test Directory spreadsheet, retrieves panel info from the Pa
 Compares the data from the spreadsheet and database, identifying mismatches
 
 4. `update_panels_info.py`:
-Update panels info to latest signoff versions from PanelApp
+Update panels info to latest sign-off versions from PanelApp. Supports dry-run mode (default) for preview without applying changes
 
 5. `update_genes.py`:
-Updates the table, `east-genes` with updates from PanelApp.
+Updates the table, `east-genes` with high-confidence gene data from PanelApp. Supports dry-run mode (default) for preview without applying changes
 
 6. `validate_east_genes_table.py`:
 Verifies that `east-genes` table has been populated
@@ -35,15 +35,33 @@ Compares the new genepanels with the old (prod) one and summarises any diff to a
 Check that all genes in new genepanels are mapped to a clinical transcript in prod g2t file.
 
 ### How to Run
-1. Set up credentials: Ensure your database credentials are set in environment variables.
+1. Set up credentials: Create a `.env` file or set the following environment variables:
+
+```
+DB_ENDPOINT=database_host
+DB_PORT=database_port
+DB_USERNAME=your_database_username
+DB_PASSWORD=your_database_password
+DB_NAME=database_name
+```
 
 2. Install dependencies:
 `pip install -r requirements.txt`
 
-3. Run scripts in following order to validate panels in ngtd database:
+3. Run scripts in following order to validate panels info in ngtd database:
 - `python query_db.py`
 - `python parse_east_glh_td_spreadsheet.py -i path/to/spreadsheet`
 - `python compare_dfs.py`
 
-### Output
-Prints diff between the two data sources to stdout and writes a summary to a spreadsheet (`td_diff.xlsx`).
+4. To update panels and genes with latest sign-offs from PanelApp:
+- `python update_panels_info.py --no-dry-run`
+- `python update_genes.py --no-dry-run`
+- `python validate_east_genes_table.py`
+
+5. To generate new genepanels and compare diff with current (prod) genepanels:
+- `python generate_genepanels.py`
+- `python compare_genepanels.py --new_file_id <file_id> --old_file_id <file_id>`
+
+6. To check that genepanels is compactible to prod g2t file:
+- `python check_gene_to_transcript.py --genepanels <file_id> --g2t <file_id>`
+
