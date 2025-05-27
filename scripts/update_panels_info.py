@@ -116,7 +116,6 @@ def main():
     try:
         with psycopg2.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cursor:
-                print(type(cursor))
                 print("Connected to the database successfully.")
                 cursor.execute(
                     """

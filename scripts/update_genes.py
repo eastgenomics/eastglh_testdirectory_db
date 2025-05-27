@@ -61,12 +61,14 @@ def get_high_confidence_genes(panel_id: int, version: str) -> list:
         return []
 
 
-def get_existing_genes_for_panel(east_panel_id: int, cursor) -> set:
+def get_existing_genes_for_panel(
+    east_panel_id: int, cursor: psycopg2.extensions.cursor
+) -> set:
     """Get existing genes for a panel from the database.
 
     Args:
         east_panel_id (int): primary key of panel in "east-panels" table
-        cursor (psycopg2.Cursor): A database cursor object
+        cursor (psycopg2.extensions.cursor): A database cursor object
 
     Returns:
         set[str]: Set of existing hgnc ids for the panel
@@ -89,14 +91,17 @@ def get_existing_genes_for_panel(east_panel_id: int, cursor) -> set:
 
 
 def add_genes_to_panel(
-    east_panel_id: int, genes_to_add: set, cursor, dry_run: bool
+    east_panel_id: int,
+    genes_to_add: set,
+    cursor: psycopg2.extensions.cursor,
+    dry_run: bool,
 ) -> None:
     """Insert new genes for a panel into the database.
 
     Args:
         east_panel_id (int): Panel identifier.
         genes_to_add (set): Genes to insert.
-        cursor (psycopg2.Cursor): Database cursor object.
+        cursor (psycopg2.extensions.cursor): Database cursor object.
         dry_run (bool): If True, simulate only.
     """
     for hgnc_id in genes_to_add:
@@ -122,14 +127,17 @@ def add_genes_to_panel(
 
 
 def remove_genes_from_panel(
-    east_panel_id: int, genes_to_remove: set, cursor, dry_run: bool
+    east_panel_id: int,
+    genes_to_remove: set,
+    cursor: psycopg2.extensions.cursor,
+    dry_run: bool,
 ) -> None:
     """Remove genes that are no longer part of the panel.
 
     Args:
         east_panel_id (int): Panel identifier.
         genes_to_remove (set): Genes to remove.
-        cursor (psycopg2.Cursor): Database cursor object.
+        cursor (psycopg2.extensions.cursor): Database cursor object.
         dry_run (bool): If True, simulate only.
     """
     for hgnc_id in genes_to_remove:
@@ -156,13 +164,18 @@ def remove_genes_from_panel(
             print(f"Error removing gene {hgnc_id} from panel {east_panel_id}: {e}")
 
 
-def update_db_genes(east_panel_id, hgnc_ids, cursor, dry_run=True) -> None:
+def update_db_genes(
+    east_panel_id: int,
+    hgnc_ids: list[str],
+    cursor: psycopg2.extensions.cursor,
+    dry_run: bool = True,
+) -> None:
     """Insert high-confidence genes for a panel into the database.
 
     Args:
         east_panel_id (int): primary key of panel in "east-panels" table
         hgnc_ids (List[str]): list of hgnc ids from panelapp
-        cursor (pyscopg2.Cursor): A database cursor object used to execute
+        cursor (psycopg2.extensions.cursor): A database cursor object used to execute
         SQL queries.
         dry_run (bool): If True, simulate only.
     """
