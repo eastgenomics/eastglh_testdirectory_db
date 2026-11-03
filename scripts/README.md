@@ -17,7 +17,7 @@ Parses the East-GLH Test Directory spreadsheet, retrieves panel info from the Pa
 Compares the data from the spreadsheet and database, identifying mismatches
 
 4. `update_panels_info.py`:
-Update panels info to latest sign-off versions from PanelApp. Supports dry-run mode (default) for preview without applying changes
+Update panels info to latest sign-off versions from PanelApp. Supports dry-run mode (default) for preview without applying changes. Can include or exclude specific panels using --panel-ids or --exclude-panel-ids.
 
 5. `update_genes.py`:
 Updates the table, `east-genes` with high-confidence gene data from PanelApp. Supports dry-run mode (default) for preview without applying changes
