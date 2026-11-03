@@ -114,7 +114,19 @@ def parse_arguments():
         "--no-dry-run",
         action="store_false",
         dest="dry_run",
-        help="Run without modifying the database (default is dry-run mode)",
+        help="Run for real, modifying the database (default is dry-run mode)",
+    )
+    parser.add_argument(
+        "--panel-ids",
+        nargs="+",
+        type=int,
+        help="Only update these panel IDs (default: all panels with panel-type-id 1)",
+    )
+    parser.add_argument(
+        "--exclude-panel-ids",
+        nargs="+",
+        type=int,
+        help="Skip these panel IDs",
     )
     return parser.parse_args()
 
@@ -127,14 +139,33 @@ def main():
         with psycopg2.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cursor:
                 print("Connected to the database successfully.")
-                cursor.execute(
-                    """
+                query = """
                     SELECT "panel-id", "panel-name", "panel-version"
                     FROM testdirectory."east-panels"
                     WHERE "panel-type-id" = 1
                 """
-                )
+                params = []
+                if args.panel_ids:
+                    query += ' AND "panel-id" = ANY(%s)'
+                    params.append(args.panel_ids)
+                if args.exclude_panel_ids:
+                    query += ' AND NOT ("panel-id" = ANY(%s))'
+                    params.append(args.exclude_panel_ids)
+
+                cursor.execute(query, params)
                 panel_data = cursor.fetchall()
+
+                # Report requested IDs that weren't found (typos, or not
+                # panel-type-id 1); excluded IDs are expected to be absent
+                if args.panel_ids:
+                    found = {row[0] for row in panel_data}
+                    missing = (
+                        set(args.panel_ids)
+                        - found
+                        - set(args.exclude_panel_ids or [])
+                    )
+                    if missing:
+                        print(f"Panel IDs not found in DB: {sorted(missing)}")
 
                 # Fetch latest signoff data for each panel ID
                 for panel_id, current_name, current_version in panel_data:
