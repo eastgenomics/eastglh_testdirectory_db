@@ -116,13 +116,14 @@ def parse_arguments():
         dest="dry_run",
         help="Run for real, modifying the database (default is dry-run mode)",
     )
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
         "--panel-ids",
         nargs="+",
         type=int,
         help="Only update these panel IDs (default: all panels with panel-type-id 1)",
     )
-    parser.add_argument(
+    group.add_argument(
         "--exclude-panel-ids",
         nargs="+",
         type=int,
